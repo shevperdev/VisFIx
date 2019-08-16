@@ -7,26 +7,36 @@ export default class ToolPallete extends HTMLElement {
   
   constructor() {
     super()
-    this.innerHTML = this.render()
-    this.selectorEngine = Selectable($$('body > *:not(script):not(tool-pallete)'), this.nodeSelected)
 
-    // dispatch event example
-    // this.dispatchEvent(
-    //   new CustomEvent('outbound-message', 
-    //     { detail: payload, bubbles: false }))
+    // todo: these are 2 model groups, with separate selected state scopes
+    // todo: duplicate
+    // todo: create
+    this.model = {
+      a: 'element',
+      v: 'group',
+      '': '',
+      m: 'move',
+      'shift+m': 'margin',
+      p: 'padding',
+      f: 'font',
+      t: 'text',
+      c: 'color',
+      s: 'search',
+    }
+
+    this.innerHTML = this.render()
+    this.selectorEngine = Selectable($$('body > *:not(script):not(tool-pallete)'))
   }
 
   connectedCallback() {
     $$('li', this).on('click', ({target}) => 
       this.toolSelected(target))
 
-    hotkeys('m', e => this.toolSelected($('[data-tool="move"]')))
-    hotkeys('shift+m', e => this.toolSelected($('[data-tool="margin"]')))
-    hotkeys('p', e => this.toolSelected($('[data-tool="padding"]')))
-    // hotkeys('f', e => this.toolSelected($('[data-tool="font"]')))
-    hotkeys('t', e => this.toolSelected($('[data-tool="text"]')))
+    Object.entries(this.model).forEach(([key, value]) =>
+      hotkeys(key, e => this.toolSelected($(`[data-tool="${value}"]`))))
 
     this.toolSelected($('[data-tool="move"]'))
+    // this.toolSelected($('[data-tool="element"]'))
   }
 
   disconnectedCallback() {}
@@ -42,26 +52,19 @@ export default class ToolPallete extends HTMLElement {
     this[el.dataset.tool]()
   }
 
-  nodeSelected(els) {
-    console.log(els)
-  }
-
   render() {
     return `
       <ol>
-        <li data-tool='group'>v</li>
-        <li data-tool='element' data-active='true'>a</li>
-        <li></li>
-        <li data-tool='move' data-active='true'>m</li>
-        <li data-tool='margin'>M</li>
-        <li data-tool='padding'>p</li>
-        <li data-tool='font'>f</li>
-        <li data-tool='text'>t</li>
-        <li data-tool='color'>c</li>
-        <li data-search='search'>s</li>
+        ${Object.entries(this.model).reduce((list, [key, value]) => `
+          ${list}
+          <li data-tool='${value}' data-active='${key == 'a' || key == 'm'}'>${key == 'shift+m' ? 'M':key}</li>
+        `,'')}
       </ol>
     `
   }
+
+  group() {}
+  element() {}
 
   move() {
     console.info('move initialized')
@@ -78,16 +81,17 @@ export default class ToolPallete extends HTMLElement {
     this.deactivate_feature = Padding('[data-selected=true]') 
   }
 
-  font() {
-    console.info('font initialized')
-  }
+  font() {} 
 
   text() {
-    console.info('font initialized')
+    console.info('text initialized')
     this.selectorEngine.onSelectedUpdate(EditText)
     this.deactivate_feature = () => 
       this.selectorEngine.removeSelectedCallback(EditText)
   }
+
+  color() {}
+  search() {}
 }
 
 customElements.define('tool-pallete', ToolPallete)
